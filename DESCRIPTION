@@ -6,7 +6,7 @@ Author: c(
   person(given = "Jose", family = "J. Quinlan", email = "jjquinla@uc.cl", role = c("aut", "cre")),
   person(given = "Garritt", family = "L. Page", email = "page@stat.byu.edu", role = c("aut")))
 Maintainer: Jose J Quinlan <jjquinla@uc.cl>
-Description: Detects multivariate change points using dependent random partition models
+Description: Detects change points in multiple processes using dependent random partition models.  The local probabilities of a change point are correlated across process
 License: GPL
 Encoding: UTF-8
 LazyData: true
