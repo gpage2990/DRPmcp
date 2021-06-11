@@ -7,8 +7,8 @@
 
 
 ## "MCMCLOGITP" subroutine
-mcmc.logitp = function(nburn,nskip,nsave,ydata,nu0,mu0,sigma0,mltype,
-                      theta,rwmhvars){
+mcmc.logitp = function(nburn,nskip,nsave,ydata,nu0,mu0,sigma0,mltypes,
+                       thetas,devs){
 
   ndata = dim(ydata)[2]
   nseries = dim(ydata)[1]
