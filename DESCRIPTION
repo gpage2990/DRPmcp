@@ -1,6 +1,6 @@
 Package: DRPmcp
 Type: Package
-Title: Multiple Change Point Detection based on Random Partition Models
+Title: Multiple Change Point Detection based on Dependent Random Partition Models
 Version: 0.1.0
 Author: c(
   person(given = "Jose", family = "J. Quinlan", email = "jjquinla@uc.cl", role = c("aut", "cre")),
