@@ -3,16 +3,15 @@ c=======================================================================
 c     TOOLS: (P)ROBABILITY (D)ISTRIBUTIONS
 c
 c     SUBROUTINE NAMES:
-c     · MVTLOGITD
-c     · MVTLOGITR
 c     · LOGMVTD
+c     · LOGNIGD
 c=======================================================================
 c=======================================================================
 c
 c
 c=======================================================================
 c=======================================================================
-      subroutine logmvtd(dmn,x,nu,mu,invsigma,val)
+      subroutine logmvtd(dmn,x,nu,mu,invsigma,logdetsigma,logdmvt)
 c=======================================================================
 c=======================================================================
 c     BEGIN: LOGMVTD SUBROUTINE
@@ -20,9 +19,9 @@ c     BEGIN: LOGMVTD SUBROUTINE
 c=======================================================================
 c     DESCRIPTION
 c=======================================================================
-c     "LOGMVTD" RETURNS THE UNNORMALIZED LOG DENSITY, EVALUATED AT
-c     X IN (0,1)^D, OF A D-DIMENSIONAL T DISTRIBUTION WITH DEGREES OF
-c     FREEDOM NU, LOCATION VECTOR MU AND SCALE MATRIX SIGMA.
+c     "LOGMVTD" RETURNS THE LOG DENSITY, EVALUATED AT X IN (0,1)^D,
+c     OF A D-DIMENSIONAL T DISTRIBUTION WITH DEGREES OF FREEDOM NU,
+c     LOCATION VECTOR MU AND SCALE MATRIX SIGMA.
 c=======================================================================
 c     INPUTS
 c=======================================================================
@@ -36,179 +35,101 @@ c     mu: LOCATION VECTOR MU
       real*8 mu(dmn)
 c     invsigma: INVERSE OF SCALE MATRIX SIGMA
       real*8 invsigma(dmn,dmn)
+c     logdetsigma: LOG DETERMINANT OF SCALE MATRIX SIGMA
+      real*8 logdetsigma
 c=======================================================================
 c     OUTPUTS
 c=======================================================================
-c     val: LOG{T[D](X|NU,MU,SIGMA)}
-      real*8 val
+c     logdmvt: LOG{T[D](X|NU,MU,SIGMA)}
+      real*8 logdmvt
 c=======================================================================
 c     WORKING VARIABLES
 c=======================================================================
 c     INDEXES
       integer ii
       integer jj
+c     EXCLUSIVE FOR CONSTANT LOG(PI)
+      real*8 logpi
+c     EXCLUSIVE FOR CALCULATING LOG{T[D](X|NU,MU,SIGMA)}
+      real*8 qf
 c     OTHERS
-      real*8 rw
-      real*8 sw
+      real*8 aux1
+      real*8 aux2
 c=======================================================================
 c     ALGORITHM
 c=======================================================================
-      sw=0.d0
+      logpi=dlog(4.d0*datan(1.d0))
+      qf=0.d0
       do ii=1,dmn
          do jj=1,dmn
-            rw=((x(ii)-mu(ii))*invsigma(ii,jj))*(x(jj)-mu(jj))
-            sw=sw+rw
+            aux1=((x(ii)-mu(ii))*invsigma(ii,jj))*(x(jj)-mu(jj))
+            qf=qf+aux1
          end do
       end do
-      val=(0.5d0*(-nu-dble(dmn)))*dlog(1.d0+(sw/nu))
+      logdmvt=(-0.5d0*(nu+dble(dmn)))*dlog(1.d0+(qf/nu))
+      aux1=dlgama(0.5d0*(nu+dble(dmn)))-dlgama(0.5d0*nu)
+      aux2=((-0.5d0*dble(dmn))*(dlog(nu)+logpi))+(-0.5d0*logdetsigma)
+      logdmvt=logdmvt+(aux1+aux2)
 c=======================================================================
       return
 c     END: LOGMVTD SUBROUTINE
       end
 c=======================================================================
 c=======================================================================
-c=======================================================================
-c=======================================================================
 c
 c
 c=======================================================================
 c=======================================================================
-      subroutine mvtlogitd(dmn,x,nu,mu,invsigma,val)
+      subroutine lognigd(x,mu,kappa,alpha,beta,logdnig)
 c=======================================================================
 c=======================================================================
-c     BEGIN: MVTLOGITD SUBROUTINE
+c     BEGIN: LOGNIGD SUBROUTINE
       implicit none
 c=======================================================================
 c     DESCRIPTION
 c=======================================================================
-c     "MVTLOGITD" RETURNS THE LOG DENSITY, EVALUATED AT X IN (0,1)^D
-c     AND IGNORING THE NORMALIZING CONSTANT, OF A D-DIMENSIONAL LOGIT-T
-c     DISTRIBUTION WITH DEGREES OF FREEDOM NU, LOCATION VECTOR MU AND
-c     SCALE MATRIX SIGMA.
+c     "LOGNIGD" RETURNS THE LOG DENSITY, EVALUATED AT X=(M,S^2), OF A
+c     NORMAL-INVERSE-GAMMA DISTRIBUTION GIVEN BY
+c     LOG{NORMAL(M|MU,S^2/KAPPA)}+LOG{INV-GAMMA(S^2|ALPHA,BETA)}.
 c=======================================================================
 c     INPUTS
 c=======================================================================
-c     dmn: DIMENSION OF THE MULTIVARIATE LOGIT-T
-      integer dmn
 c     x: VECTOR WHERE THE DENSITY WILL BE EVALUATED
-      real*8 x(dmn)
-c     nu: DEGREES OF FREEDOM NU
-      real*8 nu
-c     mu: LOCATION VECTOR MU
-      real*8 mu(dmn)
-c     invsigma: INVERSE OF SCALE MATRIX SIGMA
-      real*8 invsigma(dmn,dmn)
+      real*8 x(2)
+c     mu: MEAN (NORMAL COMPONENT)
+      real*8 mu
+c     kappa: PRECISION (NORMAL COMPONENT)
+      real*8 kappa
+c     alpha: SHAPE (INVERSE-GAMMA COMPONENT)
+      real*8 alpha
+c     beta: SCALE (INVERSE-GAMMA COMPONENT)
+      real*8 beta
 c=======================================================================
 c     OUTPUTS
 c=======================================================================
-c     val: LOG{LOGIT-T[D](X|NU,MU,SIGMA)}
-      real*8 val
-c=======================================================================
-c     WORKING VARIABLES
-c=======================================================================
-c     INDEXES
-      integer ii
-      integer jj
-c     OTHERS
-      real*8 jw
-      real*8 rw
-      real*8 sw
-      real*8 yw(dmn)
-c=======================================================================
-c     ALGORITHM
-c=======================================================================
-      jw=0.d0
-      do ii=1,dmn
-c        YW=(LOG{X[I]/(1-X[I])}:I=1,...,D)
-         yw(ii)=dlog(x(ii))-dlog(1.d0-x(ii))
-c        JW=SUM(LOG(X[I])+LOG(1-X[I]):I=1,...,D)
-         jw=jw+(dlog(x(ii))+dlog(1.d0-x(ii)))
-      end do
-      sw=0.d0
-      do ii=1,dmn
-         do jj=1,dmn
-            rw=((yw(ii)-mu(ii))*invsigma(ii,jj))*(yw(jj)-mu(jj))
-            sw=sw+rw
-         end do
-      end do
-      val=((0.5d0*(-nu-dble(dmn)))*dlog(1.d0+(sw/nu)))-jw
-c=======================================================================
-      return
-c     END: MVTLOGITD SUBROUTINE
-      end
-c=======================================================================
-c=======================================================================
-c
-c
-c=======================================================================
-c=======================================================================
-      subroutine mvtlogitr(dmn,nu,mu,cholsigma,val)
-c=======================================================================
-c=======================================================================
-c     BEGIN: MVTLOGITR SUBROUTINE
-      implicit none
-c=======================================================================
-c     DESCRIPTION
-c=======================================================================
-c     "MVTLOGITR" RETURNS A RANDOM VECTOR GENERATED FROM A
-c     D-DIMENSIONAL LOGIT-T DISTRIBUTION WITH DEGREES OF FREEDOM NU,
-c     LOCATION VECTOR MU AND SCALE MATRIX SIGMA.
-c=======================================================================
-c     INPUTS
-c=======================================================================
-c     dmn: DIMENSION OF THE MULTIVARIATE LOGIT-T
-      integer dmn
-c     nu: DEGREES OF FREEDOM NU
-      real*8 nu
-c     mu: LOCATION VECTOR MU
-      real*8 mu(dmn)
-c     cholsigma: CHOLESKY DECOMPOSITION OF SCALE MATRIX SIGMA
-      real*8 cholsigma(dmn,dmn)
-c=======================================================================
-c     OUTPUTS
-c=======================================================================
-c     val: X~LOGIT-T[D](NU,MU,SIGMA)
-      real*8 val(dmn)
+c     logdnig: LOG{NORMAL(MU|M,SIGMA^2/K)}+LOG{INV-GAMMA(SIGMA^2|A,B)}
+      real*8 logdnig
 c=======================================================================
 c     C++ FUNCTIONS
 c=======================================================================
-      real*8 chisqr
-      real*8 normr
+c     FUNCTIONS IN "TOOLSR2.C"
+      real*8 gammad
+      real*8 normd
 c=======================================================================
 c     WORKING VARIABLES
 c=======================================================================
-c     INDEXES
-      integer ii
-      integer jj
 c     OTHERS
-      real*8 rw
-      real*8 sw
-      real*8 tw(dmn)
-      real*8 zw(dmn)
+      real*8 aux1
+      real*8 aux2
 c=======================================================================
 c     ALGORITHM
 c=======================================================================
-      sw=chisqr(nu)
-      sw=dsqrt(nu/sw)
-      do ii=1,dmn
-         zw(ii)=normr(0.d0,1.d0)
-      end do
-      do ii=1,dmn
-         rw=0.d0
-         do jj=1,dmn
-            rw=rw+(cholsigma(ii,jj)*zw(jj))
-         end do
-c        TW~T[D](NU,MU,SIGMA)
-         tw(ii)=mu(ii)+(sw*rw)
-      end do
-      do ii=1,dmn
-         zw(ii)=tw(ii)-dlog(1.d0+dexp(tw(ii)))
-         val(ii)=dexp(zw(ii))
-      end do
+      aux1=normd(x(1),mu,dsqrt(x(2)/kappa),1)
+      aux2=gammad(1.d0/x(2),alpha,1.d0/beta,1)-(2.d0*dlog(x(2)))
+      logdnig=aux1+aux2
 c=======================================================================
       return
-c     END: MVTLOGITR SUBROUTINE
+c     END: LOGNIGD SUBROUTINE
       end
 c=======================================================================
 c=======================================================================
-

@@ -1,7 +1,4 @@
 useDynLib(DRPmcp)
 
-export(nornignornigsas)
-export(nornignorniguni)
-export(nornigpoigamsas)
-export(nornigpoigamuni)
+export(mcmc.betas)
 export(mcmc.logitp)

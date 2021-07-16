@@ -44,6 +44,16 @@ double F77_SUB(betad)(double *x, double *shape1, double *shape2, int *give_log)
 	return dbeta(*x, *shape1, *shape2, *give_log);
 }
 
+double F77_SUB(binomd)(double *x, double *size, double *prob, int *give_log)
+{
+	return dbinom(*x, *size, *prob, *give_log);
+}
+
+double F77_SUB(gammad)(double *x, double *shape, double *scale, int *give_log)
+{
+	return dgamma(*x, *shape, *scale, *give_log);
+}
+
 double F77_SUB(lnormd)(double *x, double *meanlog, double *sdlog, int *give_log)
 {
 	return dlnorm(*x, *meanlog, *sdlog, *give_log);
@@ -52,6 +62,11 @@ double F77_SUB(lnormd)(double *x, double *meanlog, double *sdlog, int *give_log)
 double F77_SUB(normd)(double *x, double *mean, double *sd, int *give_log)
 {
 	return dnorm(*x, *mean, *sd, *give_log);
+}
+
+double F77_SUB(poisd)(double *x, double *lambda, int *give_log)
+{
+	return dpois(*x, *lambda, *give_log);
 }
 
 

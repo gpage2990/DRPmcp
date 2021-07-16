@@ -37,14 +37,7 @@ c     C) S^2~INVERSE-GAMMA(ALPHA,BETA).
 c
 c        · SHAPE ALPHA AND SCALE BETA ARE FIXED.
 c
-c     IN THIS CASE, THETA=(MU,KAPPA,ALPHA,BETA). LETING D=CARD(S[J]),
-c     ML(Y[T]:T IN S[J]|THETA)} IS THE DENSITY OF A D-DIMENSIONAL
-c     T DISTRIBUTION WITH DEGREES OF FREEDOM 2*ALPHA, LOCATION VECTOR
-c     MU*1[D] AND SCALE MATRIX (BETA/ALPHA)*(I[D]+(1/KAPPA)*1[D]1[D]').
-c
-c     1) 1[D]: D-DIMENSIONAL VECTOR WITH ALL ENTRIES EQUAL 1.
-c
-c     2) I[D]: D-DIMENSIONAL IDENTITY MATRIX.
+c     IN THIS CASE, THETA=(MU,KAPPA,ALPHA,BETA).
 c=======================================================================
 c     INPUTS
 c=======================================================================
@@ -66,25 +59,34 @@ c=======================================================================
 c     val: LOG{ML(Y[T]:T IN S[J]|THETA)}
       real*8 val
 c=======================================================================
+c     C++ FUNCTIONS
+c=======================================================================
+c     FUNCTIONS IN "TOOLSR2.C"
+      real*8 normd
+c=======================================================================
 c     WORKING VARIABLES
 c=======================================================================
 c     INDEXES
-      integer s
-c     EXCLUSIVE FOR CONSTANT LOG(PI)
-      real*8 logpi
+      integer ss
 c     EXCLUSIVE FOR STORING D
-      integer d
+      real*8 dd
 c     EXCLUSIVE FOR STORING LOG{ML(Y[T]:T IN S[J]|THETA)}
-      real*8 mu
-      real*8 kappa
-      real*8 alpha
-      real*8 beta
+      real*8 muo
+      real*8 kappao
+      real*8 alphao
+      real*8 betao
+      real*8 mun
+      real*8 kappan
+      real*8 alphan
+      real*8 betan
       real*8 sy
+      real*8 my
       real*8 s2y
 c     OTHERS
-      real*8 dw
-      real*8 rw
-      real*8 sw
+      real*8 logf1w
+      real*8 logf2w
+      real*8 logf3w
+      real*8 xw(2)
 c=======================================================================
 c     SETTING VALUES FOR SOME WORKING VARIABLES
 c=======================================================================
@@ -92,32 +94,40 @@ c=======================================================================
          print *,'Error in lognornig subroutine: check npars'
          stop
       end if
-      logpi=1.144729885849400174143427351353d0
-      d=0
-      sy=0.d0
-      s2y=0.d0
-      do s=1,nobs
-         if (labels(s).eq.indj) then
-            d=d+1
-            sy=sy+obs(s)
-            s2y=s2y+(obs(s)*obs(s))
-         end if
-      end do
-      mu=pars(1)
-      kappa=pars(2)
-      alpha=pars(3)
-      beta=pars(4)
+      xw(1)=0.d0
+      xw(2)=1.d0
+      muo=pars(1)
+      kappao=pars(2)
+      alphao=pars(3)
+      betao=pars(4)
 c=======================================================================
 c     ALGORITHM
 c=======================================================================
-      dw=dble(d)
-      val=dlgama(alpha+(0.5d0*dw))-dlgama(alpha)
-      rw=0.5d0*(dlog(kappa)-dlog(kappa+dw))
-      sw=(dw*0.5d0)*(logpi+dlog(2.d0*beta))
-      val=val+(rw-sw)
-      rw=((mu*mu)*kappa)+s2y
-      sw=(((kappa*mu)+sy)*((kappa*mu)+sy))/(kappa+dw)
-      val=val-(alpha+(0.5d0*dw))*dlog(1.d0+((0.5d0*(rw-sw))/beta))
+      dd=0.d0
+      sy=0.d0
+      logf1w=0.d0
+      do ss=1,nobs
+         if (labels(ss).eq.indj) then
+            dd=dd+1.d0
+            sy=sy+obs(ss)
+            logf1w=logf1w+normd(obs(ss),xw(1),dsqrt(xw(2)),1)
+         end if
+      end do
+      my=sy/dd
+      s2y=0.d0
+      do ss=1,nobs
+         if (labels(ss).eq.indj) then
+            s2y=s2y+((obs(ss)-my)**2)
+         end if
+      end do
+      mun=((muo*kappao)+sy)/(kappao+dd)
+      kappan=kappao+dd
+      alphan=alphao+(0.5d0*dd)
+      betan=betao+(((0.5d0*(dd*kappao))*((my-muo)**2))/(dd+kappao))
+      betan=betan+(0.5d0*s2y)
+      call lognigd(xw,muo,kappao,alphao,betao,logf2w)
+      call lognigd(xw,mun,kappan,alphan,betan,logf3w)
+      val=logf1w+(logf2w-logf3w)
 c=======================================================================
       return
 c     END: LOGNORNIG SUBROUTINE
@@ -150,12 +160,7 @@ c     B) L~GAMMA(ALPHA,BETA).
 c
 c        · SHAPE ALPHA AND RATE BETA ARE FIXED.
 c
-c     IN THIS CASE, THETA=(ALPHA,BETA). LETING D=CARD(S[J]),
-c     ML(Y[T]:T IN S[J]|THETA)} IS THE DENSITY OF A NEGATIVE
-c     MULTINOMIAL DISTRIBUTION WITH DISPERSION ALPHA AND
-c     PROBABILITY EVENTS {1/(B+N)}*1[D].
-c
-c     1) 1[D]: D-DIMENSIONAL VECTOR WITH ALL ENTRIES EQUAL 1.
+c     IN THIS CASE, THETA=(ALPHA,BETA).
 c=======================================================================
 c     INPUTS
 c=======================================================================
@@ -177,21 +182,28 @@ c=======================================================================
 c     val: LOG{ML(Y[T]:T IN S[J]|THETA)}
       real*8 val
 c=======================================================================
+c     C++ FUNCTIONS
+c=======================================================================
+c     FUNCTIONS IN "TOOLSR2.C"
+      real*8 gammad
+      real*8 poisd
+c=======================================================================
 c     WORKING VARIABLES
 c=======================================================================
 c     INDEXES
-      integer s
+      integer ss
 c     EXCLUSIVE FOR STORING D
-      integer d
+      real*8 dd
 c     EXCLUSIVE FOR STORING LOG{ML(Y[T]:T IN S[J]|THETA)}
-      real*8 alpha
-      real*8 beta
+      real*8 alphao
+      real*8 betao
+      real*8 alphan
+      real*8 betan
       real*8 sy
-      real*8 slgy
 c     OTHERS
-      real*8 dw
-      real*8 rw
-      real*8 sw
+      real*8 logf1w
+      real*8 logf2w
+      real*8 logf3w
 c=======================================================================
 c     SETTING VALUES FOR SOME WORKING VARIABLES
 c=======================================================================
@@ -199,25 +211,26 @@ c=======================================================================
          print *,'Error in logpoigam subroutine: check npars'
          stop
       end if
-      d=0
-      sy=0.d0
-      slgy=0.d0
-      do s=1,nobs
-         if (labels(s).eq.indj) then
-            d=d+1
-            sy=sy+obs(s)
-            slgy=slgy+dlgama(obs(s)+1.d0)
-         end if
-      end do
-      alpha=pars(1)
-      beta=pars(2)
+      alphao=pars(1)
+      betao=pars(2)
 c=======================================================================
 c     ALGORITHM
 c=======================================================================
-      dw=dble(d)
-      rw=dlgama(alpha+sy)-(dlgama(alpha)+slgy)
-      sw=(alpha*(dlog(beta)-dlog(beta+dw)))-(sy*dlog(beta+dw))
-      val=rw+sw
+      dd=0.d0
+      sy=0.d0
+      logf1w=0.d0
+      do ss=1,nobs
+         if (labels(ss).eq.indj) then
+            dd=dd+1.d0
+            sy=sy+obs(ss)
+            logf1w=logf1w+poisd(obs(ss),1.d0,1)
+         end if
+      end do
+      alphan=alphao+sy
+      betan=betao+dd
+      logf2w=gammad(1.d0,alphao,1.d0/betao,1)
+      logf3w=gammad(1.d0,alphan,1.d0/betan,1)
+      val=logf1w+(logf2w-logf3w)
 c=======================================================================
       return
 c     END: LOGPOIGAM SUBROUTINE
